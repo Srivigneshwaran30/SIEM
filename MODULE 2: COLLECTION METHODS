@@ -1,0 +1,279 @@
+ MODULE 2: COLLECTION METHODS
+
+---
+
+## ⭐ 1️⃣ What is Log Collection?
+
+✅ The **process of ingesting logs** from different sources into your SIEM.
+✅ Goal = centralize logs from many systems in one place.
+
+Without this → SIEM = useless.
+
+---
+
+## ⭐ 2️⃣ Why is Collection Important?
+
+✅ Reliable log collection = visibility.
+✅ Must work in **real-time** or near real-time.
+✅ Should support many types of sources:
+
+* Local logs (Linux/Windows)
+* Remote logs (via network)
+* Cloud logs (API)
+
+✅ Our SIEM should eventually handle **hybrid environments**:
+
+* Linux servers
+* Windows servers/workstations
+* Firewalls
+* Cloud infra
+
+---
+
+## ⭐ 3️⃣ General Collection Strategies
+
+### A. **Agentless Collection**
+
+✅ Directly read log files on the server
+✅ Receive logs via Syslog over network
+
+✅ Advantages:
+
+* Easy to set up
+* No software to maintain on source systems (except maybe sending syslog)
+
+✅ Disadvantages:
+
+* Limited OS integration
+* Windows Event Logs need extra tools (like NXLog)
+
+---
+
+### B. **Agent-based Collection**
+
+✅ Deploy small collector/agent on the source machine
+✅ Agent pushes logs to SIEM
+
+✅ Examples:
+
+* Wazuh agent
+* NXLog for Windows
+* Filebeat
+
+✅ Advantages:
+
+* Better OS integration
+* Supports Windows Event Logs natively
+
+✅ Disadvantages:
+
+* More to maintain (upgrades, configs)
+* Security overhead
+
+---
+
+✅ *Industry practice = support both*.
+⭐ For MVP, let’s start **agentless** but design it so we can add **agent-based** later.
+
+---
+
+## ⭐ 4️⃣ Collection Protocols We Should Know
+
+✅ **Syslog** (UDP/514 or TCP)
+
+* Internet standard for log forwarding
+* Used by *almost everything*: Linux, firewalls, routers
+* Easy to implement
+
+✅ **File Tailing**
+
+* Continuously read local log files as they grow
+* Like `tail -f` in Linux
+* For local system logs and app logs
+
+✅ **API Pull**
+
+* For Cloud providers
+* AWS CloudTrail, GCP Logs, Azure Logs
+* Advanced, for later phases
+
+✅ **Windows Event Forwarding**
+
+* Windows native
+* Harder to implement, needs Windows infra knowledge
+* Can be replaced in MVP by NXLog pushing to syslog
+
+---
+
+## ⭐ 5️⃣ Research Examples in Industry Tools
+
+✅ **Elastic Filebeat**
+
+* Reads files, forwards over network
+
+✅ **NXLog**
+
+* Reads Windows Event Logs → forwards as syslog
+
+✅ **Wazuh Agent**
+
+* Reads OS logs → forwards to manager
+
+✅ **Syslog-ng / rsyslog**
+
+* Dedicated syslog servers for collection
+
+✅ Industry SIEMs = combine multiple methods.
+
+---
+
+## ⭐ 6️⃣ Collection Challenges
+
+✅ Log format differences
+
+* Each log source is unique
+
+✅ High volume
+
+* Web logs can be huge
+
+✅ Reliability
+
+* UDP syslog can drop packets
+* File tailing needs to handle rotation
+
+✅ Security
+
+* TLS for syslog
+* Authentication for agents
+
+✅ Parsing awareness
+
+* Collector should tag logs with source type for parsing
+
+---
+
+## ⭐ 7️⃣ OUR SIEM - MVP COLLECTION PLAN
+
+✅ For our first version:
+
+| Source Type      | Collection Method |
+| ---------------- | ----------------- |
+| Local Linux logs | File tailing      |
+| Web server logs  | File tailing      |
+| Remote devices   | Syslog receiver   |
+| Windows logs     | NXLog → Syslog    |
+
+✅ We focus on:
+✔️ File-based collector
+✔️ Syslog receiver (UDP 514)
+✔️ Simple config file listing which files to watch
+
+---
+
+## ⭐ 8️⃣ MVP COLLECTION MODULE DESIGN
+
+✅ We’ll build **collector module** with 2 main components:
+
+### A. **File Collector**
+
+✔️ Watches a file (tail -f)
+✔️ Reads new lines as they arrive
+✔️ Passes them to parser
+
+**Features to design:**
+
+* Handles rotation (logrotate)
+* Multi-file support
+* Configurable paths
+
+✅ Example config:
+
+```yaml
+file_paths:
+  - /var/log/auth.log
+  - /var/log/nginx/access.log
+```
+
+---
+
+### B. **Syslog Receiver**
+
+✔️ Listens on UDP port 514 (or custom)
+✔️ Accepts syslog packets
+✔️ Adds metadata (source IP)
+✔️ Passes them to parser
+
+**Features to design:**
+
+* Basic RFC 3164 / RFC 5424 parsing
+* Source IP tagging
+* Port configuration
+
+✅ Example config:
+
+```yaml
+syslog:
+  enabled: true
+  listen_ip: 0.0.0.0
+  port: 514
+```
+
+---
+
+✅ Later we can add:
+
+* TCP syslog support
+* TLS
+* Agents
+
+---
+
+## ⭐ 9️⃣ Data Flow Diagram
+
+```
++-------------+
+| Log Sources |
++-------------+
+     |
+     v
++-------------------+
+| Collector Module  |
+| - File Tailing    |
+| - Syslog Receiver |
++-------------------+
+     |
+     v
++------------------+
+| Parser Module    |
++------------------+
+```
+
+---
+
+## ⭐ 10️⃣ OUR SIEM RESEARCH CHECKLIST (Module 2)
+
+✅ Understand:
+
+* What is Syslog? (RFC 3164, 5424)
+* How to read files like tail -f in Python
+* How to handle multiple sources
+* How to configure collector (YAML/JSON)
+* Security considerations (e.g. UDP syslog no auth)
+
+---
+
+## ❤️ **OUR DECISION FOR PROJECT**
+
+✅ Our MVP Collection Design:
+
+✔️ 1. File Collector (for local logs)
+✔️ 2. Syslog Receiver (for remote logs, including Windows via NXLog)
+✔️ 3. Configurable sources
+
+✅ Windows Support Strategy:
+
+* Recommend NXLog for forwarding Windows Event Logs as syslog
+* Our receiver ingests them
+
+---
