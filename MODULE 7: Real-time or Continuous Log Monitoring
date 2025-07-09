@@ -1,0 +1,295 @@
+MODULE 7: Real-time or Continuous Log Monitoring
+
+# ✅ 🎯 Short Answer
+
+✅ Goal = Watch logs *as they grow*
+✅ Don’t just process old logs.
+✅ Need *real-time / near-real-time* detection.
+
+**Industry requirement:**
+
+> Security teams want alerts the moment something bad happens.
+
+---
+
+# ✅ 1️⃣ What is Real-time Monitoring?
+
+✅ SIEM continuously watches:
+
+* Files (like /var/log/auth.log)
+* Syslog (network UDP 514)
+
+✅ As new events arrive:
+
+* Collector grabs them
+* Parser parses
+* Storage inserts
+* Alerts Engine evaluates
+* Alerts generated instantly
+
+✅ Result: Analyst is notified in seconds, not hours.
+
+---
+
+# ✅ 2️⃣ Real-world Analogy
+
+✅ Think of **tail -f** in Linux.
+
+```
+tail -f /var/log/auth.log
+```
+
+✅ As new lines are appended → you see immediately.
+
+✅ SIEM does the same → but also parses + alerts.
+
+---
+
+# ✅ 3️⃣ What Inputs We Need to Watch Continuously
+
+✅ File inputs:
+
+* Linux: /var/log/auth.log
+* Web server: /var/log/nginx/access.log
+
+✅ Syslog inputs:
+
+* UDP port 514 on localhost or network
+
+✅ Windows?
+
+* Use agent to ship logs as syslog / files
+
+✅ SIEM collector listens continuously to both.
+
+---
+
+# ✅ 4️⃣ MVP Monitoring Design
+
+✅ Our collector process:
+✔️ Watches log files (tail)
+✔️ Listens for syslog packets
+✔️ For each new line:
+
+* Parse
+* Store
+* Evaluate rules
+* Trigger alert if match
+
+✅ Runs forever until stopped.
+
+---
+
+# ✅ 5️⃣ File Monitoring: Tailer
+
+✅ *Python approach:*
+
+```python
+with open('/var/log/auth.log') as f:
+    f.seek(0, 2)  # Go to end
+    while True:
+        line = f.readline()
+        if line:
+            process_line(line)
+        else:
+            time.sleep(0.5)
+```
+
+✅ Every time a new line is written → our collector ingests it immediately.
+
+---
+
+# ✅ 6️⃣ Syslog Monitoring: UDP Listener
+
+✅ *Python approach:*
+
+```python
+import socket
+
+sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+sock.bind(("0.0.0.0", 514))
+while True:
+    data, addr = sock.recvfrom(1024)
+    process_line(data.decode())
+```
+
+✅ As soon as a device sends a syslog message → our collector gets it.
+
+---
+
+# ✅ 7️⃣ Multiplexed Input Sources
+
+✅ Advanced plan (still easy with Python):
+✔️ Watch multiple files
+✔️ Handle multiple network sources
+
+✅ Use:
+
+* Threads
+* Async
+* Select/poll
+
+✅ Example:
+
+* One thread per file tail
+* One thread for syslog socket
+
+---
+
+# ✅ 8️⃣ Continuous Processing Pipeline
+
+✅ For every new line:
+✔️ Collector → Parser → Storage → Alerts
+
+✅ Realtime flow:
+
+```
+Log source (file/syslog)
+    ↓
+Collector
+    ↓
+Parser
+    ↓
+SQLite DB
+    ↓
+Alert Engine
+    ↓
+Alerts Table
+```
+
+✅ Whole cycle: < 1 second
+
+---
+
+# ✅ 9️⃣ MVP CLI Example
+
+✅ Start the collector:
+
+```
+python collector.py --config config.yaml
+```
+
+✅ Collector runs forever.
+✅ Prints:
+
+```
+[INFO] Ingested new line from /var/log/auth.log
+[INFO] Alert triggered: failed_login
+```
+
+---
+
+# ✅ 10️⃣ Config File Example
+
+✅ Define inputs in config:
+
+```yaml
+inputs:
+  files:
+    - /var/log/auth.log
+    - /var/log/nginx/access.log
+  syslog:
+    port: 514
+```
+
+✅ Easy for users to add/remove sources.
+
+---
+
+# ✅ 11️⃣ MVP Alert Notifications
+
+✅ In CLI:
+
+```
+[ALERT] Rule: failed_login | IP: 192.168.1.10 | Time: 2025-07-09 12:30
+```
+
+✅ Optional:
+
+* Write to alert.log file
+* Send email (later)
+* Webhook (future)
+
+---
+
+# ✅ 12️⃣ Why Real-time Monitoring Matters
+
+✅ Security teams can:
+
+* Block IP immediately
+* Investigate while attack is ongoing
+* Prove compliance
+
+✅ Without it → SIEM = Just log archive
+
+---
+
+# ✅ 13️⃣ Advanced Future Ideas
+
+✅ 1️⃣ Message Queues:
+
+* Kafka
+* RabbitMQ
+
+✅ 2️⃣ Scaling:
+
+* Multiple collectors
+* Central storage
+
+✅ 3️⃣ Event forwarders:
+
+* NXLog / Filebeat → our syslog
+
+✅ 4️⃣ Enrichment:
+
+* GeoIP lookup
+* Threat intel
+
+✅ 5️⃣ Correlation engine:
+
+* Detect lateral movement
+* Link multiple alerts
+
+---
+
+# ✅ 14️⃣ MVP Design Goals for Real-time Monitoring
+
+✅ \[x] Tail files continuously
+✅ \[x] Listen for syslog continuously
+✅ \[x] Parse each line immediately
+✅ \[x] Insert into DB immediately
+✅ \[x] Evaluate rules immediately
+✅ \[x] Insert alerts immediately
+✅ \[x] Print alerts immediately
+
+✅ Outcome:
+⭐ Lightweight
+⭐ Fully offline
+⭐ Works on laptop
+
+---
+
+# ✅ ❤️ Professional Summary
+
+✅ Real-time monitoring:
+✔️ Continuously watch logs
+✔️ Process on the fly
+✔️ Trigger alerts instantly
+
+✅ SIEM collector = always running process
+
+✅ Gives security teams:
+⭐ Fast detection
+⭐ Fast response
+⭐ Better security posture
+
+---
+
+# ✅ ❤️ TL;DR for Machan
+
+✅ Collector process runs forever
+✅ Reads new logs as they arrive
+✅ Sends them to parser → storage → alert engine
+✅ Alerts generated in real time
+
+✅ Your SIEM becomes *ALIVE* ❤️🔥
