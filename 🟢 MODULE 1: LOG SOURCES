@@ -1,0 +1,218 @@
+ 🟢 MODULE 1: LOG SOURCES
+
+
+## ⭐ 1️⃣ What Are Log Sources?
+
+Log sources are any systems or devices that generate events or logs you want to collect and analyze.
+
+Logs are **digital footprints** of:
+
+* User activity
+* System behavior
+* Security events
+
+**In SIEM**, these logs are the *fuel* for detection.
+
+---
+
+## ⭐ 2️⃣ Why Are Log Sources Important?
+
+✅ Logs tell you:
+
+* Who did what
+* When it happened
+* Where it came from
+* Whether it was successful or failed
+
+✅ Without logs, SIEM = blind.
+
+✅ Good coverage across multiple sources = high detection capability.
+
+---
+
+## ⭐ 3️⃣ Common Categories of Log Sources
+
+I’m giving you a *research-friendly list*, with examples:
+
+### 🔹 a) Operating System Logs
+
+* **Linux:**
+
+  * `/var/log/auth.log` — authentication events (login, sudo)
+  * `/var/log/syslog` — system events
+* **Windows:**
+
+  * Security Event Log — logon events, policy changes
+  * Application Event Log
+
+✅ *These are core security logs.*
+
+---
+
+### 🔹 b) Network Device Logs
+
+* Firewalls (pfSense, Cisco ASA)
+* Routers, Switches
+* Load balancers
+
+✅ Usually sent via Syslog.
+
+---
+
+### 🔹 c) Application Logs
+
+* Web server access logs (Apache, Nginx)
+
+  * Path: `/var/log/nginx/access.log`
+* Application error logs
+
+✅ Good for detecting:
+
+* Path traversal
+* SQL injection attempts
+* Brute-force login
+
+---
+
+### 🔹 d) Security Tools
+
+* IDS/IPS logs (Snort, Suricata)
+* Antivirus logs
+
+✅ Often high-value alerts.
+
+---
+
+### 🔹 e) Cloud Logs
+
+* AWS CloudTrail
+* Azure Activity Log
+* GCP Audit Logs
+
+✅ *Optional for your MVP — can be added later.*
+
+---
+
+## ⭐ 4️⃣ What Logs Should We Start With?
+
+For your **first version**, I recommend:
+
+✅ **Linux logs:**
+
+* `/var/log/auth.log` — detect failed logins
+* `/var/log/syslog` — general system activity
+
+✅ **Web server logs:**
+
+* `/var/log/nginx/access.log` or Apache logs
+
+✅ **Syslog:**
+
+* Receive logs from other devices via UDP port 514
+
+**These 3 are enough for MVP.**
+
+---
+
+## ⭐ 5️⃣ Log Sample Examples
+
+I’ll give examples so you can see what parsing needs to handle.
+
+### ✨ Example 1: Linux auth.log
+
+```
+Jul  9 12:23:01 ubuntu sshd[1234]: Failed password for invalid user admin from 192.168.1.10 port 51422 ssh2
+```
+
+Fields to extract:
+
+* Timestamp
+* Process (`sshd`)
+* Event (`Failed password`)
+* Username
+* Source IP
+
+---
+
+### ✨ Example 2: Nginx Access Log
+
+```
+192.168.1.15 - - [09/Jul/2025:12:24:01 +0000] "GET /login HTTP/1.1" 200 612 "-" "Mozilla/5.0"
+```
+
+Fields to extract:
+
+* Source IP
+* Timestamp
+* HTTP method & path
+* Response code
+* User agent
+
+---
+
+### ✨ Example 3: Syslog Message
+
+```
+<13>Jul  9 12:25:01 firewall1 kernel: [UFW BLOCK] IN=eth0 OUT= MAC=... SRC=10.0.0.5 DST=192.168.1.100 ...
+```
+
+Fields to extract:
+
+* Priority
+* Timestamp
+* Hostname
+* Event type
+* Source/Destination IP
+
+---
+
+## ⭐ 6️⃣ Design Considerations
+
+When you select log sources:
+
+✅ **Consistency:**
+
+* Each log format is different.
+* Parser must know which log type is being ingested.
+
+✅ **Volume:**
+
+* Web logs = high volume.
+* Auth logs = medium volume.
+
+✅ **Retention:**
+
+* Decide how long to keep logs.
+
+✅ **Security:**
+
+* Logs may contain sensitive info.
+* Protect log files & DB.
+
+---
+
+## ⭐ 7️⃣ Our SIEM’s MVP Log Source Plan
+
+| Log Type       | Collection Method | Parser |
+| -------------- | ----------------- | ------ |
+| Linux auth.log | File tail         | Regex  |
+| Syslog         | UDP listener      | Regex  |
+| Nginx access   | File tail         | Regex  |
+
+**Optional Later:**
+
+* Windows Event Logs (needs agent or API)
+* Cloud logs (API fetch)
+
+---
+
+## ⭐ 8️⃣ Research Actions For You
+
+✅ Read about:
+
+* What each log contains (fields, examples)
+* How Syslog protocol works (RFC 5424)
+* Typical attack patterns in logs (failed login, HTTP 500, etc.)
+
+✅ Collect a few sample log files to test your parser later.
+
