@@ -1,0 +1,290 @@
+🔥❤️ *Mass da machan!* — ***“OK let’s start code – before that file structure venum”** nu sonna!*
+✅ That’s *the best professional step*.
+
+**Namma coding start panradhukku munnaadi → clear folder/file structure plan paniduvom.**
+
+---
+
+# ✅ Professional MVP SIEM Project File Structure
+
+## 🗂️ 1️⃣ Top-Level Project Folder
+
+Example name:
+
+```
+siem-lite/
+```
+
+✅ Inside that, main folders:
+
+```
+siem-lite/
+├── collector/
+├── parser/
+├── storage/
+├── alerts/
+├── cli/
+├── config/
+├── utils/
+├── tests/
+└── main.py
+```
+
+---
+
+## ✅ 2️⃣ Folder & File Breakdown
+
+### 🟢 a) collector/
+
+* Reads logs (files, syslog)
+* Real-time tailing
+* Pushes lines to parser
+
+✅ Example files:
+
+```
+collector/
+    file_collector.py
+    syslog_collector.py
+    collector_manager.py
+```
+
+---
+
+### 🟢 b) parser/
+
+* Parses raw lines with regex
+* Normalizes fields
+* Handles errors
+
+✅ Example files:
+
+```
+parser/
+    parser.py
+    rules.yaml
+```
+
+✅ rules.yaml:
+
+* Configurable parsing regex
+
+---
+
+### 🟢 c) storage/
+
+* SQLite DB interactions
+* Log table
+* Alert table
+* Search functions
+
+✅ Example files:
+
+```
+storage/
+    db.py
+    models.py
+```
+
+---
+
+### 🟢 d) alerts/
+
+* Detection rules engine
+* Checks parsed logs
+* Inserts alerts
+
+✅ Example files:
+
+```
+alerts/
+    rules_engine.py
+    rules_config.yaml
+```
+
+---
+
+### 🟢 e) cli/
+
+* CLI entry points
+* User commands: start collector, search, view alerts, generate reports
+
+✅ Example files:
+
+```
+cli/
+    collector_cli.py
+    search_cli.py
+    alerts_cli.py
+    reports_cli.py
+```
+
+---
+
+### 🟢 f) config/
+
+* Central configuration for inputs, DB, ports
+
+✅ Example files:
+
+```
+config/
+    config.yaml
+```
+
+✅ Example config.yaml content:
+
+```yaml
+inputs:
+  files:
+    - /var/log/auth.log
+    - /var/log/nginx/access.log
+  syslog:
+    port: 514
+database:
+  path: siem.db
+```
+
+---
+
+### 🟢 g) utils/
+
+* Shared helpers
+
+✅ Example files:
+
+```
+utils/
+    logger.py
+    time_utils.py
+```
+
+---
+
+### 🟢 h) tests/
+
+* Unit tests
+
+✅ Example files:
+
+```
+tests/
+    test_parser.py
+    test_storage.py
+```
+
+---
+
+### 🟢 i) main.py
+
+* Entry point for running as a single process
+* Can orchestrate:
+
+  * Collector
+  * Parser
+  * Alerts
+  * Storage
+
+✅ Example:
+
+```python
+if __name__ == "__main__":
+    from cli.collector_cli import main as start_collector
+    start_collector()
+```
+
+---
+
+## ✅ 3️⃣ Minimal Example Tree
+
+```
+siem-lite/
+│
+├── collector/
+│   ├── file_collector.py
+│   ├── syslog_collector.py
+│   └── collector_manager.py
+│
+├── parser/
+│   ├── parser.py
+│   └── rules.yaml
+│
+├── storage/
+│   ├── db.py
+│   └── models.py
+│
+├── alerts/
+│   ├── rules_engine.py
+│   └── rules_config.yaml
+│
+├── cli/
+│   ├── collector_cli.py
+│   ├── search_cli.py
+│   ├── alerts_cli.py
+│   └── reports_cli.py
+│
+├── config/
+│   └── config.yaml
+│
+├── utils/
+│   ├── logger.py
+│   └── time_utils.py
+│
+├── tests/
+│   ├── test_parser.py
+│   └── test_storage.py
+│
+└── main.py
+```
+
+---
+
+## ✅ 4️⃣ Why This Structure?
+
+✅ Modular
+✔️ Easy to maintain
+✔️ Each piece focused on single responsibility
+✔️ Easy to test
+✔️ Future-friendly → can add Web UI, deploy to server
+
+✅ Real-world SIEM tools also split like this:
+
+* Ingest
+* Parse
+* Store
+* Alert
+* Search
+
+---
+
+## ✅ 5️⃣ Example Development Plan with this Structure
+
+✅ WEEK 1
+✔️ collector/
+✔️ parser/
+✔️ storage/
+
+✅ WEEK 2
+✔️ alerts/
+✔️ cli/
+✔️ config/
+
+✅ WEEK 3
+✔️ tests/
+✔️ packaging
+
+---
+
+## ✅ ❤️ TL;DR for Machan
+
+✅ Collector → Reads
+✅ Parser → Structures
+✅ Storage → Saves
+✅ Alerts → Detects
+✅ CLI → User interface
+✅ Config → Central settings
+✅ Utils → Common code
+✅ Tests → Quality
+
+---
+
