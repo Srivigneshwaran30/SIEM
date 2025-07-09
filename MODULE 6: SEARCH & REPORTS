@@ -1,0 +1,232 @@
+ ✅ MODULE 6: SEARCH & REPORTS
+
+**Goal**:
+✅ Search historical logs
+✅ Investigate alerts
+✅ Optional: Generate reports
+
+> Without search = logs irunthalum use illa.
+> Without reports = value puriyadhu to managers.
+
+---
+
+## ✅ 1️⃣ SEARCH MODULE — Overview
+
+✅ SIEM user (security analyst) should be able to:
+
+* Search logs using:
+
+  * Keywords
+  * Time range
+  * Source
+  * Specific field (like IP, method, path)
+
+✅ Main goals:
+✔️ Investigate incidents
+✔️ Hunt for threats
+✔️ Validate alerts
+
+---
+
+## ✅ 2️⃣ Search CLI Commands (for our MVP)
+
+### 🔍 a) Search by keyword
+
+```
+python search.py --contains "Failed password"
+```
+
+✅ Output:
+
+```
+[LOG ID: 12]
+Source: authlog
+Time: 2025-07-09 12:23:01
+Raw: Jul 9 12:23:01 ubuntu sshd[1234]: Failed password for root from 192.168.1.10
+```
+
+---
+
+### 🔍 b) Search by field match
+
+```
+python search.py --field ip --value 192.168.1.10
+```
+
+✅ Output:
+
+```
+[LOG ID: 22] Nginx log with same IP
+[LOG ID: 23] SSH failure from that IP
+```
+
+---
+
+### 🔍 c) Search by time range
+
+```
+python search.py --start "2025-07-09 12:00" --end "2025-07-09 13:00"
+```
+
+✅ Output:
+All logs between those times
+
+---
+
+### 🔍 d) Search by source type
+
+```
+python search.py --source authlog
+```
+
+---
+
+## ✅ 3️⃣ How It Works (Internally)
+
+✅ Your logs already in SQLite like this:
+
+| id | timestamp           | raw\_log                                | parsed\_log (JSON)                     |
+| -- | ------------------- | --------------------------------------- | -------------------------------------- |
+| 12 | 2025-07-09 12:23:01 | "Failed password from 192.168.1.10 ..." | {"ip": "192.168.1.10", "event": "..."} |
+
+✅ You run a SQL query in Python:
+
+```sql
+SELECT * FROM logs WHERE raw_log LIKE '%Failed password%';
+```
+
+✅ For field search:
+
+```sql
+SELECT * FROM logs WHERE json_extract(parsed_log, '$.ip') = '192.168.1.10';
+```
+
+✅ Easy, flexible, and fast for MVP size.
+
+---
+
+## ✅ 4️⃣ Output Format (CLI)
+
+✅ For each match:
+
+```
+====================
+[Log ID: 12]
+Source: authlog
+Time: 2025-07-09 12:23:01
+IP: 192.168.1.10
+Event: Failed password for root
+Raw: Jul 9 12:23:01 ubuntu sshd[...]
+====================
+```
+
+✅ Professional investigation experience 💼
+
+---
+
+## ✅ 5️⃣ Advanced Search Features (Future)
+
+* Boolean logic (AND/OR)
+* Regex match
+* Saved queries
+* Timeline view
+* Search via Web UI
+
+---
+
+# 📊 MODULE 6.2: REPORTS (Optional in MVP, but plan it)
+
+✅ Reports = summarized views of logs or alerts.
+
+✅ Types:
+
+* Daily alert summary
+* Top attacker IPs
+* Failed login count
+* HTTP request trends
+
+---
+
+## ✅ Example Report Idea 1: Top 5 Alerted Rules
+
+```sql
+SELECT rule_name, COUNT(*) as count
+FROM alerts
+GROUP BY rule_name
+ORDER BY count DESC
+LIMIT 5;
+```
+
+✅ Output:
+
+```
+Top Alerted Rules:
+1. failed_login – 45
+2. sql_injection – 12
+3. ufw_block – 5
+```
+
+---
+
+## ✅ Example Report Idea 2: Top Source IPs
+
+```sql
+SELECT json_extract(parsed_log, '$.ip') as ip, COUNT(*)
+FROM logs
+GROUP BY ip
+ORDER BY COUNT(*) DESC
+LIMIT 5;
+```
+
+---
+
+## ✅ Reports Output Format:
+
+✅ Console Table
+✅ CSV file (for email/share)
+✅ JSON (for frontend integration)
+
+---
+
+## ✅ MVP CLI Report Command (Idea)
+
+```
+python reports.py --type top_alerts --last 24h
+```
+
+---
+
+## ✅ Future Upgrade Ideas for Reports
+
+* PDF export
+* Email scheduling
+* Dashboards (with graphs)
+* Incident timelines
+
+---
+
+# ✅ ❤️ Professional Summary
+
+### 🔍 SEARCH:
+
+* Search logs by keyword, field, time
+* Output in CLI for investigations
+* Uses SQLite queries under the hood
+
+### 📊 REPORTS:
+
+* Show trends in alerts/logs
+* Exportable, shareable format
+* Optional in MVP, must-have later
+
+---
+
+# ✅ ❤️ TL;DR for Machan
+
+✅ Without search → logs use illa
+✅ Without reports → decision-makers value ah paakamatanga
+
+✅ Search = For analyst
+✅ Reports = For manager
+
+---
