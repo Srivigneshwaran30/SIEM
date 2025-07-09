@@ -1,0 +1,301 @@
+ ✅ 🎯 Short Answer
+
+✅ **Input to Storage:**
+⭐ Parsed logs (JSON)
+⭐ Raw logs (original line)
+
+✅ **Output from Storage:**
+⭐ Searchable logs
+⭐ Alerts linked to logs
+⭐ Reports (future)
+
+---
+
+# ✅ 1️⃣ Purpose of Storage
+
+✅ Store *all collected logs* for:
+
+* Search
+* Correlation
+* Alerts
+* Compliance/audit
+
+✅ Must be:
+
+* Reliable
+* Searchable
+* Tamper-evident (for advanced)
+
+---
+
+# ✅ 2️⃣ Storage Requirements for Our MVP
+
+✅ Simple
+✅ Local (single laptop support)
+✅ Easy to query
+✅ Portable
+
+✅ Industry equivalents:
+
+* ElasticSearch (heavy)
+* Splunk Indexers (heavy)
+
+✅ For us:
+⭐ SQLite — perfect for MVP
+
+* Lightweight
+* File-based
+* No server setup
+* Works on any OS
+
+---
+
+# ✅ 3️⃣ Our Storage Design
+
+⭐ We’ll use a local SQLite DB file:
+✅ `siem.db`
+
+⭐ Contains **2 main tables**:
+
+---
+
+✅ **(A) Logs Table**
+Stores:
+
+* raw log line
+* parsed JSON
+* source info
+* timestamp
+
+✅ Example Schema:
+
+| Column       | Type      | Example                            |
+| ------------ | --------- | ---------------------------------- |
+| id           | INTEGER   | 1                                  |
+| raw\_log     | TEXT      | "Jul 9 12:23:01 ubuntu sshd\[...]" |
+| parsed\_log  | JSON      | {"timestamp": "...", "ip": "..."}  |
+| source       | TEXT      | "authlog"                          |
+| received\_at | TIMESTAMP | "2025-07-09 12:25:01"              |
+
+✅ Advantages:
+⭐ Raw log always kept
+⭐ Parsed fields easy to query
+
+---
+
+✅ **(B) Alerts Table**
+Stores:
+
+* which rule triggered
+* which log entry triggered it
+* time of alert
+
+✅ Example Schema:
+
+| Column        | Type      | Example               |
+| ------------- | --------- | --------------------- |
+| id            | INTEGER   | 1                     |
+| rule\_name    | TEXT      | "failed\_login"       |
+| log\_id       | INTEGER   | 42                    |
+| triggered\_at | TIMESTAMP | "2025-07-09 12:26:15" |
+
+✅ Links back to logs → investigator can see context.
+
+---
+
+✅ Optional later:
+✔️ Enrichment table
+✔️ User accounts table
+✔️ Threat intel table
+
+---
+
+# ✅ 4️⃣ Storage Flow
+
+✅ How logs move into storage:
+
+```
++-------------+       +--------+       +----------+
+| Collector   |  -->  | Parser |  -->  | Storage  |
++-------------+       +--------+       +----------+
+
+Collector reads file/syslog → 
+Parser parses line → 
+Storage inserts raw + parsed
+```
+
+✅ Alerts are triggered separately by rules engine:
+
+```
+Parsed log → Rules → If match → Insert alert
+```
+
+---
+
+# ✅ 5️⃣ Example: Inserted Data
+
+✅ **Logs Table Row:**
+
+| id | raw\_log                          | parsed\_log                                      | source  | received\_at        |
+| -- | --------------------------------- | ------------------------------------------------ | ------- | ------------------- |
+| 1  | Jul 9 12:23:01 ubuntu sshd\[...]" | {"timestamp": "...", "event": "Failed password"} | authlog | 2025-07-09 12:23:01 |
+
+✅ **Alerts Table Row:**
+
+| id | rule\_name    | log\_id | triggered\_at       |
+| -- | ------------- | ------- | ------------------- |
+| 1  | failed\_login | 1       | 2025-07-09 12:23:02 |
+
+---
+
+# ✅ 6️⃣ Storage Tech Choice
+
+✅ **Why SQLite?**
+✔️ No external server
+✔️ Works on Windows/Linux/Mac
+✔️ Single .db file = portable
+✔️ Easy CLI inspection
+✔️ Supports JSON fields
+
+✅ Example Python integration:
+
+```python
+import sqlite3
+conn = sqlite3.connect('siem.db')
+cursor = conn.cursor()
+cursor.execute("INSERT INTO logs (raw_log, parsed_log, source) VALUES (?, ?, ?)", (raw, json.dumps(parsed), source))
+```
+
+✅ Search:
+
+```python
+cursor.execute("SELECT * FROM logs WHERE parsed_log LIKE ?", ("%192.168.1.10%",))
+```
+
+---
+
+✅ **Industry Example (for later):**
+✔️ ElasticSearch
+✔️ PostgreSQL with JSONB
+✔️ Cloud logging stores
+
+✅ We design for SQLite first → easy to swap backend later.
+
+---
+
+# ✅ 7️⃣ CLI Command Examples
+
+✅ Insert:
+
+```
+python collector.py --config config.yaml
+```
+
+✅ View Alerts:
+
+```
+python alerts.py --list
+```
+
+⭐ Output:
+
+```
+ID  Rule         Time
+1   failed_login 2025-07-09 12:23
+```
+
+✅ Search Logs:
+
+```
+python search.py --contains "Failed password"
+```
+
+⭐ Output:
+
+```
+ID  Source   Timestamp               Raw
+1   authlog  2025-07-09 12:23:01    "Jul 9 12:23:01 ubuntu sshd[...]: Failed password"
+```
+
+---
+
+# ✅ 8️⃣ Retention Policy Plan (MVP)
+
+✅ Simple for now:
+
+* Keep all logs
+* No auto-delete
+
+✅ Later:
+
+* Configurable retention
+* Delete logs older than N days
+
+✅ Advanced:
+
+* Archive to cloud
+* Hash chains for tamper-proof
+
+---
+
+# ✅ 9️⃣ Storage Challenges
+
+✅ High volume → DB size grows
+✅ Query performance
+✅ Tamper-evidence
+✅ Backup & restore
+
+✅ Not our MVP priority → plan for later.
+
+---
+
+# ✅ 10️⃣ Our MVP Storage Goals
+
+✅ \[x] Store raw logs
+✅ \[x] Store parsed logs (JSON)
+✅ \[x] Store alerts
+✅ \[x] Search logs
+✅ \[x] CLI access
+
+⭐ Advanced (future):
+
+* Web dashboard
+* Graphs
+* Indexing for speed
+* Distributed storage
+
+---
+
+# ✅ ❤️ Professional Summary for You
+
+⭐ INPUT:
+✅ raw\_log (from collector)
+✅ parsed\_log (from parser)
+
+⭐ STORED:
+✅ logs table
+✅ alerts table
+
+⭐ OUTPUT:
+✅ Searchable logs
+✅ Alerts
+✅ Reports (later)
+
+---
+
+# ✅ ❤️ TL;DR for Machan
+
+✅ *Collector* reads logs
+✅ *Parser* structures logs
+✅ *Storage* keeps:
+✔️ raw
+✔️ parsed
+✔️ alerts
+
+✅ *Query / Search* → forensic investigation
+
+---
+
+✅ This is EXACTLY how real SIEM systems like Splunk, Graylog, Elastic SIEM work — just bigger and fancier!
+
+---
