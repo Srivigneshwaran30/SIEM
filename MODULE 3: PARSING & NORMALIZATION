@@ -1,0 +1,278 @@
+ MODULE 3: PARSING & NORMALIZATION
+
+
+
+## ✅ 1️⃣ What is Parsing?
+
+✅ Parsing = **raw log line → structured fields**.
+
+⭐ Example:
+
+```
+RAW:
+Jul  9 12:23:01 ubuntu sshd[1234]: Failed password for root from 192.168.1.10 port 51422
+```
+
+✅ Parsed:
+
+```json
+{
+  "timestamp": "Jul 9 12:23:01",
+  "host": "ubuntu",
+  "process": "sshd",
+  "event": "Failed password",
+  "user": "root",
+  "ip": "192.168.1.10",
+  "port": "51422"
+}
+```
+
+✅ SIEM needs structured data for:
+
+* Searching
+* Correlating
+* Alerting
+* Reporting
+
+---
+
+## ✅ 2️⃣ What is Normalization?
+
+✅ Normalization = **standardizing fields across sources**.
+
+⭐ Example:
+
+* Linux auth.log → "source\_ip"
+* Syslog → "source\_ip"
+* Nginx access.log → "source\_ip"
+
+✅ Goal:
+
+* Same field names everywhere.
+* Easier to write detection rules.
+
+---
+
+## ✅ 3️⃣ Why is Parsing & Normalization Important?
+
+✅ Raw logs are messy & inconsistent.
+✅ Different sources → different formats.
+✅ Without parsing:
+
+* You can’t search
+* You can’t run rules
+* SIEM is useless
+
+✅ Good parsing = Powerful SIEM.
+
+---
+
+## ✅ 4️⃣ Types of Logs We’ll Parse in MVP
+
+✅ Linux logs (auth.log)
+✅ Syslog messages
+✅ Web server logs (Nginx/Apache)
+
+✅ Each has different format:
+
+* Syslog has priority header
+* Nginx access.log has HTTP fields
+* Auth.log has SSH events
+
+---
+
+## ✅ 5️⃣ Our MVP Parsing Strategy
+
+⭐ MVP = Keep it *simple* but *solid*.
+✅ Use **Regex-based parsing**.
+
+✅ Why?
+✔️ Easy to implement
+✔️ Works for well-known formats
+✔️ Extensible
+
+---
+
+## ✅ 6️⃣ Example Parsing Rules
+
+✅ a) **Linux auth.log**
+
+```
+Regex:
+^(?P<timestamp>\w+ +\d+ \d+:\d+:\d+) (?P<host>\S+) (?P<process>\S+)\[\d+\]: (?P<event>.*)$
+```
+
+✅ Parsed Fields:
+
+* timestamp
+* host
+* process
+* event
+
+✅ b) **Nginx Access Log**
+
+```
+192.168.1.5 - - [09/Jul/2025:12:45:01 +0000] "POST /login HTTP/1.1" 200 512 "-" "Mozilla/5.0"
+
+Regex:
+^(?P<ip>\S+) .* \[(?P<timestamp>[^\]]+)\] "(?P<method>\S+) (?P<path>\S+).*" (?P<status>\d+)
+```
+
+✅ Parsed Fields:
+
+* ip
+* timestamp
+* method
+* path
+* status
+
+✅ c) **Syslog**
+
+```
+<13>Jul  9 12:25:01 server1 kernel: [UFW BLOCK] IN=eth0 OUT= MAC= SRC=10.0.0.5 DST=192.168.1.100
+
+Regex:
+^<\d+>(?P<timestamp>\w+ +\d+ \d+:\d+:\d+) (?P<host>\S+) (?P<process>\S+): (?P<event>.*)$
+```
+
+✅ Parsed Fields:
+
+* priority (optional)
+* timestamp
+* host
+* process
+* event
+
+---
+
+## ✅ 7️⃣ Normalization Plan
+
+✅ After parsing → map to standard field names.
+
+⭐ Example normalized output:
+
+```json
+{
+  "source_ip": "192.168.1.5",
+  "timestamp": "2025-07-09T12:45:01",
+  "event_type": "nginx_access",
+  "http_method": "POST",
+  "http_path": "/login",
+  "status_code": 200
+}
+```
+
+✅ Consistent fields → rules & queries work the same for all sources.
+
+---
+
+## ✅ 8️⃣ MVP Design for Parser Module
+
+✅ Input: raw log line + source type
+✅ Output: JSON with structured fields
+
+✅ Features:
+✔️ Regex-based parsing
+✔️ Configurable parser rules
+✔️ Fallback to store raw if parsing fails
+
+✅ CLI / code example:
+
+```python
+parsed = parser.parse_line(raw_line, source_type="authlog")
+```
+
+✅ Storage Example:
+
+| id | raw\_log                                              | parsed\_log (JSON)                                    |
+| -- | ----------------------------------------------------- | ----------------------------------------------------- |
+| 1  | Jul 9 12:23:01 ubuntu sshd\[1234]: Failed password... | { "timestamp": ..., "event": "Failed password", ... } |
+
+---
+
+## ✅ 9️⃣ Configurable Parsing Rules
+
+✅ Store regex patterns in config file (YAML/JSON):
+
+```yaml
+parsers:
+  authlog:
+    regex: "^(?P<timestamp>\\w+ +\\d+ \\d+:\\d+:\\d+) (?P<host>\\S+) (?P<process>\\S+)\\[\\d+\\]: (?P<event>.*)$"
+
+  nginx_access:
+    regex: "^(?P<ip>\\S+) .* \\[(?P<timestamp>[^\\]]+)\\] \"(?P<method>\\S+) (?P<path>\\S+).*\" (?P<status>\\d+)"
+```
+
+✅ Easy to update / extend.
+
+---
+
+## ✅ 10️⃣ Error Handling Plan
+
+✅ If parsing fails:
+✔️ Store raw line anyway
+✔️ Mark as unparsed
+
+✅ Example in DB:
+
+```
+{
+  "raw_log": "...",
+  "parsed_log": null,
+  "error": "Regex failed"
+}
+```
+
+✅ So nothing is lost.
+
+---
+
+## ✅ 11️⃣ Advanced (Future)
+
+✅ Machine-learning parsing
+✅ Pre-built patterns for:
+
+* Windows Event Logs
+* AWS CloudTrail
+  ✅ Enrichment:
+* GeoIP lookup for IP addresses
+* Threat intel tagging
+
+---
+
+## ✅ 12️⃣ OUR MVP PLAN
+
+⭐ Step by Step:
+
+✅ Build parser class
+✔️ Loads regex rules from config
+✔️ Parses lines based on source type
+✔️ Returns JSON dict
+
+✅ Add error handling
+✔️ Log parsing errors
+✔️ Store raw lines
+
+✅ Add normalization
+✔️ Consistent field names
+
+✅ Integrate with collector
+✔️ Collector → Parser → Storage
+
+---
+
+## ✅ ❤️ Final Professional Summary for Your Notes
+
+⭐ **Input to Parser:**
+✔️ Raw log line (from file or syslog)
+
+⭐ **Processing:**
+✔️ Apply regex rule
+✔️ Extract fields
+✔️ Normalize field names
+
+⭐ **Output:**
+✔️ Structured JSON with fields
+✔️ Stored in DB for searching, alerting
+
+---
