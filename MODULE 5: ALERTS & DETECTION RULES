@@ -1,0 +1,282 @@
+ ✅ 🎯 Short Answer
+
+✅ INPUT to Alerts Engine:
+⭐ Parsed, normalized log records from storage
+
+✅ OUTPUT:
+⭐ Alerts → stored in DB → user notification
+
+---
+
+# ✅ 1️⃣ Why Alerts Matter
+
+✅ Without alerts, SIEM = just log storage.
+✅ Alerts = detection.
+✅ Security teams *react* based on alerts.
+
+✅ Goal: **“Find suspicious behavior in logs automatically.”**
+
+---
+
+# ✅ 2️⃣ What is a Detection Rule?
+
+✅ A rule = condition + action.
+✅ Simple logic:
+
+```
+IF log matches condition → THEN alert
+```
+
+✅ Example rule:
+
+```
+IF parsed_log.event CONTAINS "Failed password"
+THEN generate alert with rule_name="failed_login"
+```
+
+✅ Rules turn raw logs into security intelligence.
+
+---
+
+# ✅ 3️⃣ Detection Rule Types
+
+✅ MVP Focus: **Simple keyword/regex match**
+✅ Future:
+✔️ Threshold rules (e.g. 5 failures in 1 minute)
+✔️ Correlation (across sources)
+✔️ ML-based anomaly detection
+
+---
+
+# ✅ 4️⃣ Example MVP Rules
+
+✅ 1️⃣ SSH brute-force:
+
+```
+Match: event contains "Failed password"
+```
+
+✅ 2️⃣ Web attack attempt:
+
+```
+Match: path contains "../"
+```
+
+✅ 3️⃣ SQL injection try:
+
+```
+Match: path contains "UNION SELECT"
+```
+
+✅ 4️⃣ Firewall block:
+
+```
+Match: event contains "UFW BLOCK"
+```
+
+✅ These simple rules give big value.
+
+---
+
+# ✅ 5️⃣ Our Rules Config Design
+
+✅ Rules in YAML or JSON file:
+
+⭐ Example `rules.yaml`
+
+```yaml
+rules:
+  - name: failed_login
+    source: authlog
+    match_field: event
+    match_type: contains
+    match_value: "Failed password"
+
+  - name: sql_injection
+    source: nginx_access
+    match_field: path
+    match_type: contains
+    match_value: "UNION SELECT"
+
+  - name: directory_traversal
+    source: nginx_access
+    match_field: path
+    match_type: contains
+    match_value: "../"
+```
+
+✅ Easy to update.
+✅ Startup friendly.
+
+---
+
+# ✅ 6️⃣ Alerts Engine Flow
+
+✅ 1️⃣ Load parsed logs from storage.
+✅ 2️⃣ For each log:
+✔️ Determine source type.
+✔️ Load rules for that source.
+✔️ Check if log field matches condition.
+✔️ If match → Insert alert in alerts table.
+
+✅ 3️⃣ Store alert with:
+
+* Rule name
+* Matched log ID
+* Time
+
+---
+
+# ✅ 7️⃣ Alerts DB Table Schema
+
+| Column        | Type      | Example               |
+| ------------- | --------- | --------------------- |
+| id            | INTEGER   | 1                     |
+| rule\_name    | TEXT      | "failed\_login"       |
+| log\_id       | INTEGER   | 42                    |
+| triggered\_at | TIMESTAMP | "2025-07-09 12:26:15" |
+
+✅ Links back to logs table → investigation.
+
+---
+
+# ✅ 8️⃣ CLI Command Examples
+
+✅ List Alerts:
+
+```
+python alerts.py --list
+```
+
+⭐ Output:
+
+```
+ID  Rule         Time
+1   failed_login 2025-07-09 12:23
+2   sql_injection 2025-07-09 12:26
+```
+
+✅ View Alert Details:
+
+```
+python alerts.py --show 2
+```
+
+⭐ Output:
+
+```
+Rule: sql_injection
+Matched Log:
+192.168.1.5 - - [09/Jul/2025:12:45:01 +0000] "GET /index.php?id=1 UNION SELECT password FROM users"
+```
+
+---
+
+# ✅ 9️⃣ Example Rule Evaluation in Code
+
+✅ Simple Python pseudocode:
+
+```python
+for log in parsed_logs:
+    for rule in rules:
+        if log['source'] == rule['source']:
+            field_value = log.get(rule['match_field'], "")
+            if rule['match_type'] == "contains" and rule['match_value'] in field_value:
+                insert_alert(rule['name'], log['id'])
+```
+
+✅ Very understandable.
+✅ Easy to extend.
+
+---
+
+# ✅ 10️⃣ Alerting Strategies for MVP
+
+✅ CLI-only for now
+✔️ User runs command to see alerts
+
+✅ Later:
+✔️ Email alerts
+✔️ Slack/webhook
+✔️ Web UI dashboard
+
+✅ Start simple → plan for scale.
+
+---
+
+# ✅ 11️⃣ Future Detection Rule Ideas
+
+⭐ Threshold rules:
+
+```
+If 5 failed logins from same IP in 1 minute
+```
+
+⭐ Correlation rules:
+
+```
+SSH login success after multiple failures
+```
+
+⭐ ML / statistical:
+
+```
+Anomaly score for rare events
+```
+
+⭐ External threat feeds:
+
+```
+Check if source IP in threat intel
+```
+
+✅ These are advanced but fit our design.
+
+---
+
+# ✅ 12️⃣ MVP Alerts Engine Design
+
+✅ Load logs from DB
+✅ Apply rules
+✅ Store alerts in DB
+✅ CLI view
+
+✅ Configurable rules
+✅ Works offline
+✅ Lightweight
+
+---
+
+# ✅ ❤️ Professional Summary
+
+✅ *Input to Alerts Module:*
+✔️ Parsed, normalized logs from DB
+
+✅ *Processing:*
+✔️ Check each log against detection rules
+
+✅ *Output:*
+✔️ Alerts inserted into DB
+✔️ CLI view for analyst
+
+✅ *Purpose:*
+✔️ Notify security team about threats
+
+---
+
+# ✅ ❤️ TL;DR for You
+
+⭐ Collector → Parser → Storage → Alerts
+
+✅ Collector: gets logs
+✅ Parser: structures logs
+✅ Storage: saves logs
+✅ Alerts: finds security events
+
+✅ Our project = a mini Splunk or Graylog ❤️
+
+---
+
+# ✅ ❤️ Real Startup Pitch Line
+
+✅ “Our SIEM detects security events with customizable rules, generating actionable alerts for rapid response.”
