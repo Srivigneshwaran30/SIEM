@@ -1,10 +1,22 @@
 📌 OVERALL RESEARCH PLAN
 ✅ We’ll break this into 6 big research modules:
+
+
 1️⃣ Log Sources
+
+
 2️⃣ Collection Methods
+
+
 3️⃣ Parsing & Normalization
+
+
 4️⃣ Storage Options
+
+
 5️⃣ Alerting / Correlation
+
+
 6️⃣ UI / Reporting
 
 ✅ For each module:
